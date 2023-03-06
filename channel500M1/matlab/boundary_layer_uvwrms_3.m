@@ -1,0 +1,93 @@
+% plot z+ - k, <uu>, <vv>, <ww> from singleGraph
+clear
+case_name=regexp(pwd,'\/\w*$','match');
+case_name=case_name{1};
+case_name(1)=[];
+% draw figure control
+fig=figure;
+sub1=subplot(121);
+sub2=subplot(122);
+set(gcf,'unit','centimeters')
+position=[20 15 14 7.5];
+set(gcf,'position',position)
+% .m file name
+script_name='TurbulentStatistics';
+% import data
+% zCoordinate XX XY XZ YY YZ ZZ
+for t=10000%2.2:0.2:5.4
+u=importdata(['graphs/',num2str(t),'/u.xy']);
+uu=u(:,2).^2;
+v=importdata(['graphs/',num2str(t),'/v.xy']);
+vv=v(:,2).^2;
+w=importdata(['graphs/',num2str(t),'/w.xy']);
+ww=w(:,2).^2;
+uv=importdata(['graphs/',num2str(t),'/uv.xy']);
+
+% draw statics - z
+% figure_name='';
+% fig=figure;
+% plot(data(:,2),data(:,1))
+% xlabel('U_x / m/s')
+% ylabel('z / m')
+% savefig(fig,['matlab/',case_name,script_name,figure_name,'.fig'])
+
+% calculate deltaniu
+niu=2e-5;
+re_tao=1000;
+h=1;
+
+% friction velocity
+%method 1
+utao=re_tao*niu/h;
+% method 2
+% k=polyfit([0 u(1:1,1)],[0 u(1:1,2)],1);
+% utao=sqrt(niu*k(1))
+% method 3 tau_w from paraview
+% utao=sqrt(abs(-0.00394607/16))
+% % method 4 pressure gradient to tau_w
+% pppx=0.000246701;
+% utao=sqrt(pppx*h/1.0)
+deltaniu=niu/utao;
+
+%% rms figure
+figure_name='uvwRms';
+yplus=u(:,1)/deltaniu;
+
+axes(sub1)
+cla
+hold on
+plot(yplus,-uv(:,2)/utao^2,'DisplayName','<u\primev\prime>/u_{\tau}^2')
+xlabel('z')
+ylabel('-<u\primev\prime>/u_{\tau}^2')
+xlim([0 1000])
+title(['t = ',num2str(t),' s'])
+box on
+% hold off
+
+axes(sub2)
+cla
+hold on
+plot(yplus,uu/utao^2,'DisplayName','<u\primeu\prime>/u_{\tau}^2')
+plot(yplus,vv/utao^2,'DisplayName','<v\primev\prime>/u_{\tau}^2')
+plot(yplus,ww/utao^2,'DisplayName','<w\primew\prime>/u_{\tau}^2')
+xlabel('z^+')
+ylabel('u_iu_j / u_{\tau}^2')
+xlim([0 1000])
+title(['t = ',num2str(t),' s'])
+box on
+% hold off
+
+% savefig(fig,['matlab/',case_name,script_name,figure_name,'t=',num2str(t),'.fig'])
+% pause()
+end
+
+% reference DNS data
+file=importdata(['../The JHU Turbulence Databases (JHTDB) turbulent channel flow data set.txt']);
+dns=file.data;
+axes(sub1)
+plot(dns(:,1),-dns(:,3),'DisplayName',['dns JHTDB'])
+axes(sub2)
+plot(dns(:,1),dns(:,4),'DisplayName',['dns JHTDB <u\primev\prime>/u_{\tau}^2'])
+plot(dns(:,1),dns(:,5),'DisplayName',['dns JHTDB <v\primev\prime>/v_{\tau}^2'])
+plot(dns(:,1),dns(:,6),'DisplayName',['dns JHTDB <w\primev\prime>/w_{\tau}^2'])
+% close all
